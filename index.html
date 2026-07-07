@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตั้งค่าระบบ — System Settings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F8FAFC; --card: #FFFFFF; --primary: #475569; --primary-hover: #334155;
+            --text: #0F172A; --text-muted: #64748B; --border: #E2E8F0; --danger: #DC2626; --success: #059669;
+        }
+        body { font-family: 'Prompt', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .lock-container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+        .lock-card { background: var(--card); border: 1px solid var(--border); padding: 30px; border-radius: 16px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .lock-card h2 { margin: 0 0 10px 0; font-size: 1.4rem; color: var(--text); }
+        .lock-card p { font-size: 0.88rem; color: var(--text-muted); margin: 0 0 20px 0; }
+        input[type="password"], input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; box-sizing: border-box; margin-bottom: 5px; transition: border-color 0.2s; }
+        input:focus, textarea:focus { outline: none; border-color: var(--primary); }
+        
+        button { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-family: inherit; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: var(--primary-hover); }
+        
+        .app-container { display: none; max-width: 900px; margin: 0 auto; padding: 30px 20px; }
+        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .app-header h1 { margin: 0; font-size: 1.5rem; color: var(--text); }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        .role-badge { background: #F1F5F9; color: var(--text); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border); }
+        .btn-logout { background: #FEE2E2; color: var(--danger); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; width: auto; transition: all 0.2s; border:none; cursor:pointer;}
+        .btn-logout:hover { background: var(--danger); color: white; }
+        
+        .setting-group { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .setting-group h3 { margin: 0 0 20px 0; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 10px; color: var(--text); display: flex; align-items: center; gap: 10px;}
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 15px; }
+        @media (min-width: 600px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+        
+        .form-group label { display: block; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-muted); font-weight: 500; }
+        .form-help { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; display: block; }
+        
+        .footer { text-align: center; padding: 20px; font-size: 0.8rem; color: var(--text-muted); margin-top: 20px; }
+        
+        /* 🟢 ตัวแจ้งเตือนบันทึกอัตโนมัติ */
+        #auto-save-status { position: fixed; top: 15px; right: 15px; background: rgba(15, 23, 42, 0.9); color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; display: none; z-index: 99999; align-items: center; gap: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .status-spin { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="auto-save-status"><div class="status-spin" id="spinIcon"></div> <span id="statusText">กำลังโหลดข้อมูล...</span></div>
+
+    <div id="lockScreen" class="lock-container">
+        <div class="lock-card">
+            <h2>⚙️ System Settings</h2>
+            <p>กรุณาระบุรหัส PIN ผู้จัดการเพื่อเข้าใช้งาน</p>
+            <input type="password" id="pinInput" placeholder="ระบุรหัสรหัส PIN 4 หลัก" maxlength="8">
+            <button onclick="verifyAccess()">ยืนยันเข้าสู่ระบบ</button>
+        </div>
+    </div>
+
+    <div id="appScreen" class="app-container">
+        <div class="app-header">
+            <h1>⚙️ System Settings</h1>
+            <div class="header-right">
+                <span id="userBadge" class="role-badge">กำลังยืนยัน...</span>
+                <button class="btn-logout" onclick="logOutSystem()">ออกจากระบบ 🔓</button>
+            </div>
+        </div>
+        
+        <form id="settingsForm">
+            <div class="setting-group">
+                <h3>🏬 ข้อมูลร้านค้าพื้นฐาน</h3>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>ชื่อร้านค้า (shopName)</label>
+                        <input type="text" id="shopName" name="shopName" class="auto-save">
+                    </div>
+                    <div class="form-group">
+                        <label>เบอร์โทรศัพท์ (phone)</label>
+                        <input type="text" id="phone" name="phone" class="auto-save">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>คะแนนสะสมต่อ 1 แต้ม (pointRate)</label>
+                        <input type="number" id="pointRate" name="pointRate" class="auto-save">
+                        <span class="form-help">เช่น 100 บาท ได้ 1 คะแนน ให้ใส่ 100</span>
+                    </div>
+                    <div class="form-group">
+                        <label>เปอร์เซ็นต์เบิกเงินล่วงหน้า (withdrawLimit)</label>
+                        <input type="number" id="withdrawLimit" name="withdrawLimit" class="auto-save">
+                        <span class="form-help">ใส่เป็นตัวเลข เช่น 50%</span>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>รหัสผ่านเข้าถึงระบบจัดการ (adminPin)</label>
+                        <input type="text" id="adminPin" name="adminPin" class="auto-save">
+                    </div>
+                    <div class="form-group">
+                        <label>ธีมสีหน้า POS (themeColor)</label>
+                        <input type="text" id="themeColor" name="themeColor" class="auto-save">
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <h3>🧾 ใบเสร็จรับเงินและภาษี</h3>
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label>ลิงก์โลโก้ร้านบนใบเสร็จ (logoUrl)</label>
+                    <input type="text" id="logoUrl" name="logoUrl" class="auto-save">
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>เลขประจำตัวผู้เสียภาษี (taxId)</label>
+                        <input type="text" id="taxId" name="taxId" class="auto-save">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ที่อยู่สำหรับออกใบกำกับภาษี (taxAddress)</label>
+                    <textarea id="taxAddress" name="taxAddress" rows="2" class="auto-save"></textarea>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <h3>🔌 การเชื่อมต่อ (API & Integrations)</h3>
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label>Line Messaging API Token (lineToken)</label>
+                    <input type="text" id="lineToken" name="lineToken" class="auto-save">
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Line Admin / Group ID (lineAdminId)</label>
+                        <input type="text" id="lineAdminId" name="lineAdminId" class="auto-save">
+                    </div>
+                    <div class="form-group">
+                        <label>Google Calendar ID (calendarId)</label>
+                        <input type="text" id="calendarId" name="calendarId" class="auto-save">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ลิงก์ระบบ QR สแกนจ่าย (qrLink)</label>
+                    <input type="text" id="qrLink" name="qrLink" class="auto-save">
+                </div>
+            </div>
+            
+        </form>
+
+        <div class="footer">&copy; 2026 DEMOPOS CONFIG HUB</div>
+    </div>
+
+    <script>
+        // 🔗 วางลิงก์เว็บแอปสคริปต์ของ "โปรเจกต์ตั้งค่า" ตรงนี้
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxh0AeIDozRAbzht1Y21xY_WkEBp3rhx5xZDiIq3A2z4smPqsxvE6r66B-hDTAuJnjVug/exec";
+        
+        let CURRENT_USER_NAME = "";
+        let autoSaveTimeout = null;
+
+        function verifyAccess() {
+            let pin = document.getElementById('pinInput').value;
+            if(!pin) return alert("กรุณากรอกรหัส PIN");
+            
+            showStatus("กำลังยืนยัน...", true);
+            callAPI(`${GAS_URL}?action=verifySettingsAdmin&pin=${encodeURIComponent(pin)}`, function(res) {
+                if(res.status === "success") {
+                    document.getElementById('lockScreen').style.display = 'none';
+                    document.getElementById('appScreen').style.display = 'block';
+                    CURRENT_USER_NAME = res.role === 'admin' ? '🛡️ Admin' : `🤵 ${res.name}`;
+                    document.getElementById('userBadge').innerText = CURRENT_USER_NAME;
+                    
+                    loadSettings();
+                } else {
+                    hideStatus();
+                    alert(res.msg);
+                }
+            });
+        }
+
+        function logOutSystem() {
+            if(confirm("ออกจากระบบตั้งค่า?")) {
+                document.getElementById('pinInput').value = "";
+                document.getElementById('lockScreen').style.display = 'flex';
+                document.getElementById('appScreen').style.display = 'none';
+                document.getElementById('settingsForm').reset();
+            }
+        }
+
+        // 📦 ดึงค่าเก่ามาใส่ในกล่อง Form
+        function loadSettings() {
+            showStatus("กำลังโหลดการตั้งค่า...", true);
+            callAPI(`${GAS_URL}?action=getSettings`, function(res) {
+                hideStatus();
+                if(res.status === "success") {
+                    let config = res.data;
+                    // จับคู่ค่าใน JSON กับ ID ของ Input
+                    for (let key in config) {
+                        let input = document.getElementById(key);
+                        if(input) {
+                            input.value = config[key];
+                        }
+                    }
+                    attachAutoSaveListeners();
+                }
+            });
+        }
+
+        // 🌟 ฟังก์ชัน Auto-Save ทำงานอัตโนมัติเมื่อพิมพ์เสร็จและคลิกที่อื่น (onblur) หรือเปลี่ยนตัวเลือก (onchange)
+        function attachAutoSaveListeners() {
+            let inputs = document.querySelectorAll('.auto-save');
+            inputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    saveSingleSetting(this.name, this.value);
+                });
+            });
+        }
+
+        function saveSingleSetting(key, value) {
+            showStatus("กำลังบันทึก...", true);
+            let url = `${GAS_URL}?action=saveSettings&${encodeURIComponent(key)}=${encodeURIComponent(value)}&user=${encodeURIComponent(CURRENT_USER_NAME)}`;
+            
+            callAPI(url, function(res) {
+                if(res.status === "success") {
+                    showStatus("✔️ บันทึกเรียบร้อย", false);
+                    setTimeout(hideStatus, 2000);
+                } else {
+                    alert("เกิดข้อผิดพลาดในการบันทึก: " + res.msg);
+                    hideStatus();
+                }
+            });
+        }
+
+        // --- UI Status Helper ---
+        function showStatus(text, showSpin) {
+            let statusBox = document.getElementById('auto-save-status');
+            document.getElementById('statusText').innerText = text;
+            document.getElementById('spinIcon').style.display = showSpin ? 'block' : 'none';
+            statusBox.style.display = 'flex';
+        }
+        function hideStatus() {
+            document.getElementById('auto-save-status').style.display = 'none';
+        }
+
+        // JSONP Call
+        function callAPI(url, callbackName) {
+            let callbackFunctionName = 'set_cb_' + Math.floor(Math.random() * 100000);
+            window[callbackFunctionName] = function(data) { callbackName(data); delete window[callbackFunctionName]; document.body.removeChild(script); };
+            let script = document.createElement('script'); script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackFunctionName; document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>
